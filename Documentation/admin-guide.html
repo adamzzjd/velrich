@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapShop Admin Panel Walkthrough</title>
+    <!-- Import Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #080b11;
+            --card-bg: #0f1524;
+            --sidebar-bg: #0c101a;
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --cyan: #06b6d4;
+            --cyan-glow: rgba(6, 182, 212, 0.15);
+            --emerald: #10b981;
+            --emerald-glow: rgba(16, 185, 129, 0.15);
+            --amber: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.15);
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #06b6d4 100%);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 50;
+            padding: 24px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            background: linear-gradient(to right, #ffffff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+            width: 100%;
+            text-decoration: none;
+        }
+
+        .nav-btn:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-btn.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.05);
+        }
+
+        .nav-btn svg {
+            transition: var(--transition-smooth);
+        }
+
+        .nav-btn.active svg {
+            transform: scale(1.1);
+            color: #a855f7;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .support-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .support-card p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .support-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .support-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+        }
+
+        .support-link.whatsapp {
+            background-color: #25d366;
+            color: black;
+        }
+
+        .support-link.whatsapp:hover {
+            box-shadow: 0 0 15px rgba(37, 211, 102, 0.4);
+        }
+
+        .support-link.email {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .support-link.email:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main Content Area */
+        main {
+            margin-left: 280px;
+            flex-grow: 1;
+            padding: 40px;
+            max-width: 1200px;
+            transition: var(--transition-smooth);
+        }
+
+        header {
+            margin-bottom: 40px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+        }
+
+        .badge.primary {
+            background-color: var(--primary-glow);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #ffffff 0%, #9ca3af 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 800px;
+        }
+
+        /* FAQ Card Styling */
+        .faq-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            transition: var(--transition-smooth);
+        }
+
+        .faq-card:hover {
+            border-color: rgba(99, 102, 241, 0.2);
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.03);
+        }
+
+        .faq-title {
+            font-size: 1.25rem;
+            color: #ffffff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .faq-title span {
+            color: #a855f7;
+            font-weight: 800;
+        }
+
+        .faq-content {
+            color: var(--text-secondary);
+            font-size: 0.98rem;
+        }
+
+        .faq-content p {
+            margin-bottom: 12px;
+        }
+
+        .faq-content ul {
+            margin-left: 20px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .code-snippet {
+            background-color: #05070c;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #38bdf8;
+            margin: 12px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .highlight-box {
+            padding: 16px;
+            border-radius: 10px;
+            margin: 16px 0;
+            background-color: var(--amber-glow);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .highlight-box h5 {
+            margin-bottom: 6px;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Responsive Layout */
+        @media (max-width: 992px) {
+            body {
+                flex-direction: column;
+            }
+            aside {
+                width: 100%;
+                position: relative;
+                top: auto;
+                bottom: auto;
+                left: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+            .logo-area {
+                margin-bottom: 20px;
+            }
+            .nav-menu {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .nav-btn {
+                width: auto;
+                flex: 1 1 45%;
+                justify-content: center;
+            }
+            main {
+                margin-left: 0;
+                padding: 24px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .nav-btn {
+                flex: 1 1 100%;
+            }
+            header h1 {
+                font-size: 2rem;
+            }
+            .faq-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside>
+        <div class="logo-area">
+            <img src="images/logo.png" alt="SnapShop Logo" style="width: 38px; height: 38px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);">
+            <div class="logo-text">SnapShop Panel</div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                </svg>
+                Hosting Web Setup
+            </a>
+            <a href="vps.html" class="nav-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                VPS Web Setup
+            </a>
+            <a href="admin-guide.html" class="nav-btn active">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Admin Panel Walkthrough
+            </a>
+
+            <a href="faq.html" class="nav-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Troubleshooting & FAQ
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="support-card">
+                <p>Need Technical Help?</p>
+                <div class="support-links">
+                    <a href="https://wa.me/212724328337" target="_blank" class="support-link whatsapp">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.977h.004c4.368 0 7.926-3.559 7.93-7.934A7.897 7.897 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.69-4.98c-.202-.101-1.194-.59-1.378-.656-.185-.067-.32-.1-.455.1-.134.2-.52.656-.637.79-.116.135-.234.15-.435.05-.201-.1-.85-.314-1.62-.999-.598-.534-1.003-1.196-1.121-1.396-.118-.2-.012-.307.088-.407.09-.09.201-.235.302-.353.1-.117.133-.2.201-.336.069-.135.034-.253-.017-.354-.052-.102-.455-1.099-.623-1.503-.164-.397-.32-.343-.455-.35-.127-.007-.274-.007-.422-.007-.148 0-.389.055-.593.278-.204.223-.78.762-.78 1.857 0 1.094.797 2.15 1.083 2.531.286.381 1.567 2.393 3.799 3.359.53.23 0 .43.9.725.22.072.483.18.663.2.18.02.66-.27 1.14-.665.48-.395.48-.665.36-.885-.12-.22-.389-.355-.59-.456z"/>
+                        </svg>
+                        WhatsApp Support
+                    </a>
+                    <a href="mailto:businessboussetta@gmail.com" class="support-link email">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/>
+                        </svg>
+                        Email Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main>
+        <header>
+            <div class="badge primary">FAQ & SUPPORT</div>
+            <h1>SnapShop Troubleshooting Guide</h1>
+            <p>Find professional solutions to common configuration issues, server deployment errors, and platform management questions.</p>
+        </header>
+
+        <!-- Q1 -->
+        <div class="faq-card">
+            <h3 class="faq-title"><span>Q:</span> Database Connection Failed (MongoServerSelectionError)</h3>
+            <div class="faq-content">
+                <p><strong>Cause:</strong> The SnapShop backend cannot establish a connection to your MongoDB instance due to incorrect credentials, invalid URI formatting, or restrictive firewalls.</p>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Verify your MongoDB connection string in the <code>.env</code> file. Ensure the username, password, and database name are absolutely correct.</li>
+                    <li>If utilizing <strong>MongoDB Atlas (Cloud)</strong>, ensure your VPS or Hosting Server's IP address is whitelisted in the Atlas Console under <em>Security > Network Access</em>.</li>
+                    <li>If hosting MongoDB locally on a VPS, verify the database service is actively running by executing:
+                        <div class="code-snippet">systemctl status mongod</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="faq-card">
+            <h3 class="faq-title"><span>Q:</span> Firebase Authentication Errors / Social Sign-In Fails</h3>
+            <div class="faq-content">
+                <p><strong>Cause:</strong> Missing Firebase configuration keys, mismatched environmental variables, or unauthorized domain requests.</p>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Navigate to <strong>Firebase Console > Project Settings</strong>. Ensure your Web App Configuration keys perfectly match the values entered within the SnapShop Admin Panel Auth Settings.</li>
+                    <li>Authorize your live domain: Go to <strong>Firebase Console > Authentication > Settings > Authorized Domains</strong>, click <strong>Add Domain</strong>, and insert your website's URL (e.g., <code>yourdomain.com</code>).</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="faq-card">
+            <h3 class="faq-title"><span>Q:</span> Product Images Fail to Upload / Missing Images</h3>
+            <div class="faq-content">
+                <p><strong>Cause:</strong> Incorrect folder permissions, missing upload directories on your VPS, or exceeding file size limits.</p>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Ensure the <code>/uploads</code> or <code>/public/images</code> directory exists in your server and has the correct write permissions. If missing, create it manually.</li>
+                    <li>If you are receiving a "Payload Too Large" error, check your Nginx configuration. You may need to increase the <code>client_max_body_size</code> parameter.</li>
+                    <li>Verify that the uploaded images are in a supported web format (like <strong>JPG, PNG, or WebP</strong>) and are optimized for the web to avoid slow loading times on the storefront.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="faq-card">
+            <h3 class="faq-title"><span>Q:</span> Admin Panel Access Denied / Invalid Credentials</h3>
+            <div class="faq-content">
+                <p><strong>Cause:</strong> The administrator account was not successfully created during the initialization wizard, or the password was forgotten.</p>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Ensure you have fully completed the <strong>SnapShop Platform Initialization Wizard</strong> which creates the initial administrator profile.</li>
+                    <li>If you lost your credentials, you must access your MongoDB instance directly (via MongoDB Compass or mongosh), navigate to the <code>users</code> collection, and manually reset the password hash, or drop the database to re-trigger the initialization wizard.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="faq-card">
+            <h3 class="faq-title"><span>Q:</span> Live Site Preview Shows "502 Bad Gateway"</h3>
+            <div class="faq-content">
+                <p><strong>Cause:</strong> The Node.js application process has crashed, is not running, or the reverse proxy (Nginx/Apache) is failing to route traffic.</p>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Check the application error logs in your hosting panel (Gadohost/cPanel) or via PM2 on your VPS to identify the root cause of the crash.</li>
+                    <li>Ensure the application is actively listening on the correct port defined in your environment settings.</li>
+                    <li>Try clicking the <strong>Re-launch</strong> or <strong>Restart Node.js App</strong> button within your hosting control panel to reboot the instance.</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>
