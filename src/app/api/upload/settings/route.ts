@@ -1,7 +1,62 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
-import { promises as fs } from "fs";
-import path from "path";
+
+const CLUDINARY_CONFIGURED = process.env.CLUUDINARY_URL || process.env.CLUUDINARY_API_KEY
+  || process.env.CLUUDINARY_NAME || process.env.CLUUDINARY_SECRET;
+
+function getCludinaryConfig() {
+  if (!CLUDINARY_CONFIGURED) {
+    return null;
+  }
+  // Accept either CLUDINARY_URL (https://<key>:<secret>@api.cl Audrey.com/v1_<cloud-name>/image/upload)
+  // or individual vars: CLUDINARY_NAME, CLUDINARY_API_KEY, CLUDINARY_SECRET, CLUDINARY_URL
+  let name: string | undefined;
+  let apiKey: string | undefined;
+  let secret: string | undefined;
+  let cloudName: string | undefined;
+
+  if (process.env.CLUUDINARY_URL) {
+    const url = new URL(process.env.CLUUDINARY_URL);
+    name = url.hostname.replace(/^api\./, "").replace(/\/v1.*/, "");
+    apiKey = url.username;
+    secret = url.password;
+    cloudName = name;
+  } else {
+    name = process.env.CLUUDINARY_NAME;
+    apiKey = process.env.CLUUDINARY_API_KEY;
+    secret = process.env.CLUUDINARY_SECRET;
+    cloudName = process.env.CLUUDINARY_CLOUD_NAME || name;
+  }
+
+  if (!apiKey || !secret || !cloudName) {
+    return null;
+  }
+
+  return { name, apiKey, secret, cloudName };
+}
+
+function cludinaryUpload(file: File): Promise<string> {
+  const config = getCludinaryConfig();
+  if (!config) {
+    throw new Error("Cludinary is not configured. Add CLUDINARY_URL or CLUDINARY_API_KEY + CLUDINARY_SECRET + CLOUD_NAME to your environment.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", process.env.CLUUDINARY_UPLOAD_PRESET || "velrich_uploads");
+
+  return fetch(`https://api.claudinary.com/v1/image/upload`, {
+    method: "POST",
+    body: formData,
+  })
+    .then(async (res) => {
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error?.message || `Cludinary upload failed: ${res.status}`);
+      }
+      return body.secure_url;
+    });
+}
 
 export async function POST(req: Request) {
   try {
@@ -20,76 +75,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "images", "Settings");
-    
-    // Ensure the directory exists
-    await fs.mkdir(uploadDir, { recursive: true });
-
     // Validate file type (only allow images)
     if (!file.type.startsWith("image/")) {
       return NextResponse.json({ error: "File is not a valid image" }, { status: 400 });
     }
 
-    // Delete old file if provided and it belongs to /images/Settings/
-    if (oldUrl && typeof oldUrl === 'string' && oldUrl.startsWith("/images/Settings/")) {
-      try {
-        const oldFilename = oldUrl.split("/").pop();
-        if (oldFilename) {
-          const oldFilepath = path.join(uploadDir, oldFilename);
-          await fs.unlink(oldFilepath);
-        }
-      } catch (err) {
-        console.error("Failed to delete old image:", err);
-        // Continue even if deletion fails (e.g. file not found)
-      }
+    // If an old URL is provided and it points to the old disk-based assets,
+    // the frontend will handle removing it. We can't rely on deleting old
+    // disk files here — Cludinary keeps them in the cloud.
+    if (oldUrl && typeof oldUrl === "string") {
+      // Old disk URL: /images/Settings/...
+      // We record it for the frontend to drop; no action needed on the server.
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const url = await cludinaryUpload(file);
 
-    // Sanitize filename and prepend timestamp
-    let filename = "";
-    const ext = path.extname(file.name);
-    const uploadType = formData.get("uploadType") as string;
-
-    if (uploadType === "logo") {
-      filename = `logo${ext}`;
-      // Delete old logo
-      const oldFiles = await fs.readdir(uploadDir).catch(() => []);
-      for (const f of oldFiles) {
-        if (f.startsWith("logo.")) {
-          await fs.unlink(path.join(uploadDir, f)).catch(() => {});
-        }
-      }
-    } else if (uploadType === "favicon") {
-      filename = "favicon.ico"; // Forced to .ico based on request
-      // Delete old favicon
-      const oldFiles = await fs.readdir(uploadDir).catch(() => []);
-      for (const f of oldFiles) {
-        if (f.startsWith("favicon.")) {
-          await fs.unlink(path.join(uploadDir, f)).catch(() => {});
-        }
-      }
-    } else if (uploadType === "heroBanner") {
-      filename = `hero_fashion_girl${ext}`;
-      // Delete old hero banner
-      const oldFiles = await fs.readdir(uploadDir).catch(() => []);
-      for (const f of oldFiles) {
-        if (f.startsWith("hero_fashion_girl.")) {
-          await fs.unlink(path.join(uploadDir, f)).catch(() => {});
-        }
-      }
-    } else {
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-      filename = `${Date.now()}-${sanitizedName}`;
-    }
-
-    const filepath = path.join(uploadDir, filename);
-
-    await fs.writeFile(filepath, buffer);
-    const newUrl = `/images/Settings/${filename}?v=${Date.now()}`;
-
-    return NextResponse.json({ url: newUrl }, { status: 200 });
+    return NextResponse.json({ url }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to upload file" }, { status: 500 });
   }

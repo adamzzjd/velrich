@@ -1,7 +1,62 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
-import { promises as fs } from "fs";
-import path from "path";
+
+const CLUDINARY_CONFIGURED = process.env.CLUUDINARY_URL || process.env.CLUUDINARY_API_KEY
+  || process.env.CLUUDINARY_NAME || process.env.CLUUDINARY_SECRET;
+
+function getCludinaryConfig() {
+  if (!CLUDINARY_CONFIGURED) {
+    return null;
+  }
+  let name: string | undefined;
+  let apiKey: string | undefined;
+  let secret: string | undefined;
+  let cloudName: string | undefined;
+
+  if (process.env.CLUUDINARY_URL) {
+    const url = new URL(process.env.CLUUDINARY_URL);
+    name = url.hostname.replace(/^api\./, "").replace(/\/v1.*/, "");
+    apiKey = url.username;
+    secret = url.password;
+    cloudName = name;
+  } else {
+    name = process.env.CLUUDINARY_NAME;
+    apiKey = process.env.CLUUDINARY_API_KEY;
+    secret = process.env.CLUUDINARY_SECRET;
+    cloudName = process.env.CLUUDINARY_CLOUD_NAME || name;
+  }
+
+  if (!apiKey || !secret || !cloudName) {
+    return null;
+  }
+
+  return { name, apiKey, secret, cloudName };
+}
+
+function cludinaryUpload(files: File[]): Promise<string[]> {
+  const config = getCludinaryConfig();
+  if (!config) {
+    throw new Error("Cludinary is not configured. Add CLUDINARY_URL or CLUDINARY_API_KEY + CLUDINARY_SECRET + CLOUD_NAME to your environment.");
+  }
+
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("file", file);
+  }
+  formData.append("upload_preset", process.env.CLUUDINARY_UPLOAD_PRESET || "velrich_uploads");
+
+  return fetch(`https://api.claudinary.com/v1/image/upload`, {
+    method: "POST",
+    body: formData,
+  })
+    .then(async (res) => {
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error?.message || `Cludinary upload failed: ${res.status}`);
+      }
+      return Array.isArray(body.result) ? body.result.map((r: any) => r.secure_url) : [body.secure_url];
+    });
+}
 
 export async function POST(req: Request) {
   try {
@@ -19,35 +74,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No files uploaded" }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "images", "Products");
-    
-    // Ensure the directory exists
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    const imageUrls: string[] = [];
-
+    // Validate file types (only allow images)
     for (const file of files) {
-      // Validate that it's a file and has content
-      if (!file || !file.name) continue;
-
-      // Validate file type (only allow images)
       if (!file.type.startsWith("image/")) {
         return NextResponse.json({ error: `File '${file.name}' is not a valid image` }, { status: 400 });
       }
-
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      // Sanitize filename and prepend timestamp
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-      const filename = `${Date.now()}-${sanitizedName}`;
-      const filepath = path.join(uploadDir, filename);
-
-      await fs.writeFile(filepath, buffer);
-      imageUrls.push(`/images/Products/${filename}`);
     }
 
-    return NextResponse.json({ urls: imageUrls }, { status: 200 });
+    const urls = await cludinaryUpload(files);
+
+    return NextResponse.json({ urls }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to upload files" }, { status: 500 });
   }
